@@ -10,26 +10,71 @@ export default function TabOneScreen({
   navigation,
 }: RootTabScreenProps<'TabOne'>) {
   const [photoUri, setPhotoUri] = useState<string | null>(null);
+  const [hasMediaPermission, setHasMediaPermission] = useState<boolean | null>(
+    false
+  );
+  const [hasCameraPermission, setHasCameraPermission] = useState<
+    boolean | null
+  >(false);
 
   useEffect(() => {
-    (async () => {
+    console.log('in use effect');
+    async () => {
+      console.log('in camera permission request');
       const { status } = await ImagePicker.requestCameraPermissionsAsync();
+      console.log('camera status', status);
       if (status !== 'granted') {
         alert('Sorry, we need camera permissions to make this work!');
+        return;
       }
-    })();
+      setHasCameraPermission(true);
+    };
+
+    async () => {
+      console.log('in media permission request');
+      const { status } =
+        await ImagePicker.requestMediaLibraryPermissionsAsync();
+      console.log('media status', status);
+      if (status !== 'granted') {
+        alert('Sorry, we need media library permissions to make this work!');
+        return;
+      }
+      setHasCameraPermission(true);
+    };
   }, []);
 
   const takePhoto = async () => {
-    let result = await ImagePicker.launchCameraAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      aspect: [4, 3],
-      quality: 1,
-    });
+    if (hasCameraPermission) {
+      console.log('has camera permission');
+      let result = await ImagePicker.launchCameraAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [4, 3],
+        quality: 1,
+      });
 
-    if (!result.canceled) {
-      setPhotoUri(result.assets[0].uri);
+      if (!result.canceled) {
+        setPhotoUri(result.assets[0].uri);
+      }
+    } else {
+      console.log('no camera permission');
+    }
+  };
+
+  const choosePhoto = async () => {
+    if (hasMediaPermission) {
+      console.log('has media permission');
+      let result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.All,
+        allowsEditing: true,
+        aspect: [4, 3],
+        quality: 1,
+      });
+      if (!result.canceled) {
+        setPhotoUri(result.assets[0].uri);
+      }
+    } else {
+      console.log('no media permission');
     }
   };
 
@@ -38,6 +83,7 @@ export default function TabOneScreen({
       <Text style={styles.title}>Take a photo:</Text>
       {photoUri && <Image source={{ uri: photoUri }} style={styles.photo} />}
       <Button title='Take a photo' onPress={takePhoto} />
+      <Button title='Choose from library' onPress={choosePhoto} />
       <View
         style={styles.separator}
         lightColor='#eee'

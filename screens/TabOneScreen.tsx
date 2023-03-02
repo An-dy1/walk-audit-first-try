@@ -1,7 +1,6 @@
-import { StyleSheet, Image, Button, TextInput } from 'react-native';
+import { StyleSheet, Image, Button, TextInput, Modal } from 'react-native';
 import React, { useState, useEffect } from 'react';
-// @ts-ignore
-import { GOOGLE_MAPS_API_KEY } from 'react-native-dotenv';
+import MapView, { Marker } from 'react-native-maps';
 
 import { Text, View } from '../components/Themed';
 import { RootTabScreenProps } from '../types';
@@ -20,7 +19,14 @@ export default function TabOneScreen({
   >(null);
   const [notes, setNotes] = useState<string>('');
   const [location, setLocation] = useState('');
-
+  const [modalVisible, setModalVisible] = useState(false);
+  const [selectedLocation, setSelectedLocation] = useState<{
+    latitude: number;
+    longitude: number;
+  } | null>({
+    latitude: 0,
+    longitude: 0,
+  });
   async function userGaveCameraPermission() {
     if (hasCameraPermission == null) {
       const { status } = await ImagePicker.requestCameraPermissionsAsync();
@@ -52,9 +58,9 @@ export default function TabOneScreen({
     }
   }
 
-  async function coordsToAddress(lat: number, long: number) {
-    console.log(GOOGLE_MAPS_API_KEY);
-  }
+  // async function coordsToAddress(lat: number, long: number) {
+  //   console.log(GOOGLE_MAPS_API_KEY);
+  // }
 
   const handleTextInputChange = (text: string) => {
     setNotes(text);
@@ -96,16 +102,37 @@ export default function TabOneScreen({
     }
   };
 
-  const handleLocation = async () => {
-    let { status } = await Location.requestForegroundPermissionsAsync();
-    if (status !== 'granted') {
-      console.log('Permission to access location was denied');
-      return;
-    }
+  // const handleLocation = async () => {
+  //   // let { status } = await Location.requestForegroundPermissionsAsync();
+  //   // if (status !== 'granted') {
+  //   //   console.log('Permission to access location was denied');
+  //   //   return;
+  //   // }
 
-    let location = await Location.getCurrentPositionAsync({});
-    coordsToAddress(location.coords.latitude, location.coords.longitude);
-    setLocation(`${location.coords.latitude}, ${location.coords.longitude}`);
+  //   // let location = await Location.getCurrentPositionAsync({});
+  //   // coordsToAddress(location.coords.latitude, location.coords.longitude);
+  //   // setLocation(`${location.coords.latitude}, ${location.coords.longitude}`);
+  //   setModalVisible(true);
+  // };
+
+  const handleGetCurrentLocation = () => {
+    try {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        setLocationErrorMsg('Permission to access location was denied');
+        return;
+      }
+
+      const { coords } = await Location.getCurrentPositionAsync({});
+      setSelectedLocation({ latitude: coords.latitude, longitude: coords.longitude });
+    } catch (error) {
+      setLocationErrorMsg('Error getting current location: ' + error);
+    }
+    setModalVisible(false);
+  };
+
+  const handleLocationSelect = (event: any) => {
+    setSelectedLocation(event.nativeEvent.coordinate);
   };
 
   const handleSave = () => {};
@@ -113,7 +140,7 @@ export default function TabOneScreen({
   return (
     <View style={styles.container}>
       {location && <Text>{location}</Text>}
-      <Button title='Set location' onPress={handleLocation} />
+      {/* <Button title='Set location' onPress={handleLocation} /> */}
       {photoUri && <Image source={{ uri: photoUri }} style={styles.photo} />}
       <Button title='Take a photo' onPress={takePhoto} />
       <Button title='Choose from library' onPress={choosePhoto} />
@@ -124,6 +151,47 @@ export default function TabOneScreen({
         value={notes}
       />
       <Button title='Save audit notes' onPress={handleSave} />
+      <View>
+        <Modal visible={modalVisible} animationType='slide'>
+          <View style={{ flex: 1 }}>
+            <MapView
+              style={{ flex: 1 }}
+              initialRegion={{
+                latitude: 37.78825,
+                longitude: -122.4324,
+                latitudeDelta: 0.0922,
+                longitudeDelta: 0.0421,
+              }}
+              onPress={handleLocationSelect}
+            >
+              {selectedLocation && (
+                <Marker
+                  title='Selected Location'
+                  coordinate={{
+                    latitude: selectedLocation.latitude,
+                    longitude: selectedLocation.longitude,
+                  }}
+                />
+              )}
+            </MapView>
+            <View>
+              <Button
+                title='Get Current Location'
+                onPress={handleGetCurrentLocation}
+              />
+              <Button
+                title='Set Location'
+                onPress={() => setModalVisible(false)}
+              />
+            </View>
+          </View>
+        </Modal>
+        <Text>
+          Selected Location:{' '}
+          {selectedLocation ? JSON.stringify(selectedLocation) : 'none'}
+        </Text>
+        <Button title='Choose Location' onPress={() => setModalVisible(true)} />
+      </View>
     </View>
   );
 }

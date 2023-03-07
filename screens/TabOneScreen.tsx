@@ -18,7 +18,6 @@ export default function TabOneScreen({
     boolean | null
   >(null);
   const [notes, setNotes] = useState<string>('');
-  const [location, setLocation] = useState('');
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedLocation, setSelectedLocation] = useState<{
     latitude: number;
@@ -27,6 +26,19 @@ export default function TabOneScreen({
     latitude: 0,
     longitude: 0,
   });
+
+  const [currentLocation, setCurrentLocation] = useState<{
+    latitude: number;
+    longitude: number;
+  } | null>({
+    latitude: 0,
+    longitude: 0,
+  });
+  const [usingCurrentLocation, setUsingCurrentLocation] =
+    useState<boolean>(true);
+
+  const [locationErrorMsg, setLocationErrorMsg] = useState('');
+
   async function userGaveCameraPermission() {
     if (hasCameraPermission == null) {
       const { status } = await ImagePicker.requestCameraPermissionsAsync();
@@ -57,6 +69,24 @@ export default function TabOneScreen({
       return hasMediaPermission;
     }
   }
+
+  useEffect(() => {
+    // Get the user's current location
+    (async () => {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        console.log('Permission to access location was denied');
+        return;
+      }
+
+      console.log('inside use effect now');
+      const location = await Location.getCurrentPositionAsync({});
+      setCurrentLocation({
+        latitude: location.coords.latitude,
+        longitude: location.coords.longitude,
+      });
+    })();
+  }, []);
 
   // async function coordsToAddress(lat: number, long: number) {
   //   console.log(GOOGLE_MAPS_API_KEY);
@@ -102,36 +132,8 @@ export default function TabOneScreen({
     }
   };
 
-  // const handleLocation = async () => {
-  //   // let { status } = await Location.requestForegroundPermissionsAsync();
-  //   // if (status !== 'granted') {
-  //   //   console.log('Permission to access location was denied');
-  //   //   return;
-  //   // }
-
-  //   // let location = await Location.getCurrentPositionAsync({});
-  //   // coordsToAddress(location.coords.latitude, location.coords.longitude);
-  //   // setLocation(`${location.coords.latitude}, ${location.coords.longitude}`);
-  //   setModalVisible(true);
-  // };
-
-  const handleGetCurrentLocation = () => {
-    try {
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== 'granted') {
-        setLocationErrorMsg('Permission to access location was denied');
-        return;
-      }
-
-      const { coords } = await Location.getCurrentPositionAsync({});
-      setSelectedLocation({ latitude: coords.latitude, longitude: coords.longitude });
-    } catch (error) {
-      setLocationErrorMsg('Error getting current location: ' + error);
-    }
-    setModalVisible(false);
-  };
-
   const handleLocationSelect = (event: any) => {
+    setUsingCurrentLocation(false);
     setSelectedLocation(event.nativeEvent.coordinate);
   };
 
@@ -139,8 +141,9 @@ export default function TabOneScreen({
 
   return (
     <View style={styles.container}>
-      {location && <Text>{location}</Text>}
-      {/* <Button title='Set location' onPress={handleLocation} /> */}
+      {currentLocation && (
+        <Text>{`${currentLocation.latitude}, ${currentLocation.longitude}`}</Text>
+      )}
       {photoUri && <Image source={{ uri: photoUri }} style={styles.photo} />}
       <Button title='Take a photo' onPress={takePhoto} />
       <Button title='Choose from library' onPress={choosePhoto} />
@@ -157,14 +160,29 @@ export default function TabOneScreen({
             <MapView
               style={{ flex: 1 }}
               initialRegion={{
-                latitude: 37.78825,
-                longitude: -122.4324,
+                latitude:
+                  selectedLocation?.latitude ||
+                  currentLocation?.latitude ||
+                  39.0073,
+                longitude:
+                  selectedLocation?.longitude ||
+                  currentLocation?.longitude ||
+                  -94.5293,
                 latitudeDelta: 0.0922,
                 longitudeDelta: 0.0421,
               }}
               onPress={handleLocationSelect}
             >
-              {selectedLocation && (
+              {usingCurrentLocation && currentLocation && (
+                <Marker
+                  title='Selected Location'
+                  coordinate={{
+                    latitude: currentLocation.latitude,
+                    longitude: currentLocation.longitude,
+                  }}
+                />
+              )}
+              {selectedLocation && !usingCurrentLocation && (
                 <Marker
                   title='Selected Location'
                   coordinate={{
@@ -176,22 +194,17 @@ export default function TabOneScreen({
             </MapView>
             <View>
               <Button
-                title='Get Current Location'
-                onPress={handleGetCurrentLocation}
+                title='Use Current Location'
+                onPress={() => setUsingCurrentLocation(true)}
               />
-              <Button
-                title='Set Location'
-                onPress={() => setModalVisible(false)}
-              />
+              <Button title='Save' onPress={() => setModalVisible(false)} />
+              <Button title='Cancel' onPress={() => setModalVisible(false)} />
             </View>
           </View>
         </Modal>
-        <Text>
-          Selected Location:{' '}
-          {selectedLocation ? JSON.stringify(selectedLocation) : 'none'}
-        </Text>
-        <Button title='Choose Location' onPress={() => setModalVisible(true)} />
       </View>
+      <Button title='Set A Location' onPress={() => setModalVisible(true)} />
+      <Text>{locationErrorMsg}</Text>
     </View>
   );
 }

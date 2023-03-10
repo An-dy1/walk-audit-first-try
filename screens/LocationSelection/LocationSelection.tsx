@@ -1,6 +1,6 @@
 import { StyleSheet, Image, Button, TextInput, Modal } from 'react-native';
 import React, { useState, useEffect } from 'react';
-import MapView, { Marker } from 'react-native-maps';
+import MapView, { MapPressEvent, Marker } from 'react-native-maps';
 
 import { Text, View } from '../../components/Themed';
 import { RootTabScreenProps } from '../../types';
@@ -11,41 +11,23 @@ import { LocationSelectionProps } from './LocationSelectionProps';
 
 export const LocationSelection: React.FC<LocationSelectionProps> = ({
   currentLocation,
+  usingCurrentLocation,
+  selectedLocation,
+  onUseCurrentLocation,
+  onSelectLocation,
 }) => {
   const [modalVisible, setModalVisible] = useState(false);
 
-  const [selectedLocation, setSelectedLocation] = useState<{
-    latitude: number;
-    longitude: number;
-  } | null>({
-    latitude: 0,
-    longitude: 0,
-  });
+  const handleLocationSelect = (event: MapPressEvent) => {
+    onSelectLocation(event.nativeEvent.coordinate);
+  };
 
-  const [usingCurrentLocation, setUsingCurrentLocation] =
-    useState<boolean>(true);
-
-  const [locationErrorMsg, setLocationErrorMsg] = useState('');
-
-  const handleLocationSelect = (event: any) => {
-    setUsingCurrentLocation(false);
-    setSelectedLocation(event.nativeEvent.coordinate);
+  const handleUseCurrentLocation = () => {
+    onUseCurrentLocation(true);
   };
 
   return (
     <View>
-      {currentLocation && usingCurrentLocation ? (
-        <Text>
-          Current: {`${currentLocation.latitude}, ${currentLocation.longitude}`}
-        </Text>
-      ) : selectedLocation && !usingCurrentLocation ? (
-        <Text>
-          Selected:
-          {`${selectedLocation.latitude}, ${selectedLocation.longitude}`}
-        </Text>
-      ) : (
-        <Text>No Location Available</Text>
-      )}
       <Modal visible={modalVisible} animationType='slide'>
         <View style={{ flex: 1 }}>
           <MapView
@@ -64,9 +46,9 @@ export const LocationSelection: React.FC<LocationSelectionProps> = ({
             }}
             onPress={handleLocationSelect}
           >
-            {usingCurrentLocation && currentLocation && (
+            {currentLocation && usingCurrentLocation && (
               <Marker
-                title='Selected Location'
+                title='Current Location'
                 coordinate={{
                   latitude: currentLocation.latitude,
                   longitude: currentLocation.longitude,
@@ -86,7 +68,7 @@ export const LocationSelection: React.FC<LocationSelectionProps> = ({
           <View>
             <Button
               title='Use Current Location'
-              onPress={() => setUsingCurrentLocation(true)}
+              onPress={handleUseCurrentLocation}
             />
             <Button title='Save' onPress={() => setModalVisible(false)} />
             <Button title='Cancel' onPress={() => setModalVisible(false)} />
@@ -94,7 +76,6 @@ export const LocationSelection: React.FC<LocationSelectionProps> = ({
         </View>
       </Modal>
       <Button title='Set A Location' onPress={() => setModalVisible(true)} />
-      <Text>{locationErrorMsg}</Text>
     </View>
   );
 };

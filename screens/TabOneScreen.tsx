@@ -17,14 +17,14 @@ export default function TabOneScreen({}: RootTabScreenProps<'TabOne'>) {
     boolean | null
   >(null);
   const [notes, setNotes] = useState<string>('');
-  // const [selectedLocation, setSelectedLocation] = useState<{
-  //   latitude: number;
-  //   longitude: number;
-  // } | null>({
-  //   latitude: 0,
-  //   longitude: 0,
-  // });
 
+  const [selectedLocation, setSelectedLocation] = useState<{
+    latitude: number;
+    longitude: number;
+  } | null>({
+    latitude: 0,
+    longitude: 0,
+  });
   const [currentLocation, setCurrentLocation] = useState<{
     latitude: number;
     longitude: number;
@@ -32,14 +32,25 @@ export default function TabOneScreen({}: RootTabScreenProps<'TabOne'>) {
     latitude: 0,
     longitude: 0,
   });
-  // const [usingCurrentLocation, setUsingCurrentLocation] =
-  //   useState<boolean>(true);
+  const [usingCurrentLocation, setUsingCurrentLocation] =
+    useState<boolean>(true);
 
-  // const [locationErrorMsg, setLocationErrorMsg] = useState('');
+  const handleUseCurrentLocation = () => {
+    setUsingCurrentLocation(true);
+  };
+
+  const handleSelectLocation = (modalLocation: {
+    latitude: number;
+    longitude: number;
+  }) => {
+    setSelectedLocation(modalLocation);
+    setUsingCurrentLocation(false);
+  };
 
   async function userGaveCameraPermission() {
     if (hasCameraPermission == null) {
       const { status } = await ImagePicker.requestCameraPermissionsAsync();
+      console.log('camera permissions:' + status);
       if (status !== 'granted') {
         setHasCameraPermission(false);
         return false;
@@ -56,6 +67,7 @@ export default function TabOneScreen({}: RootTabScreenProps<'TabOne'>) {
     if (hasMediaPermission == null) {
       const { status } =
         await ImagePicker.requestMediaLibraryPermissionsAsync();
+      console.log('media permissions:' + status);
       if (status !== 'granted') {
         setHasMediaPermission(false);
         return false;
@@ -72,12 +84,11 @@ export default function TabOneScreen({}: RootTabScreenProps<'TabOne'>) {
     // Get the user's current location
     (async () => {
       const { status } = await Location.requestForegroundPermissionsAsync();
+      console.log('location permissions:' + status);
       if (status !== 'granted') {
         console.log('Permission to access location was denied');
         return;
       }
-
-      console.log('inside use effect now');
       const location = await Location.getCurrentPositionAsync({});
       setCurrentLocation({
         latitude: location.coords.latitude,
@@ -130,15 +141,12 @@ export default function TabOneScreen({}: RootTabScreenProps<'TabOne'>) {
     }
   };
 
-  // const handleLocationSelect = (event: any) => {
-  //   setUsingCurrentLocation(false);
-  //   setSelectedLocation(event.nativeEvent.coordinate);
-  // };
-
   const handleSave = () => {};
 
   return (
     <View style={styles.container}>
+      <Text>Camera permissions: {hasCameraPermission?.toString()}</Text>
+      <Text>Media permissions: {hasMediaPermission?.toString()}</Text>
       {photoUri && <Image source={{ uri: photoUri }} style={styles.photo} />}
       <Button title='Take a photo' onPress={takePhoto} />
       <Button title='Choose from library' onPress={choosePhoto} />
@@ -149,7 +157,25 @@ export default function TabOneScreen({}: RootTabScreenProps<'TabOne'>) {
         value={notes}
       />
       <Button title='Save audit notes' onPress={handleSave} />
-      <LocationSelection currentLocation={currentLocation} />
+      {currentLocation && usingCurrentLocation ? (
+        <Text>
+          Current: {`${currentLocation.latitude}, ${currentLocation.longitude}`}
+        </Text>
+      ) : selectedLocation && !usingCurrentLocation ? (
+        <Text>
+          Selected:
+          {`${selectedLocation.latitude}, ${selectedLocation.longitude}`}
+        </Text>
+      ) : (
+        <Text>No Location Available</Text>
+      )}
+      <LocationSelection
+        currentLocation={currentLocation}
+        selectedLocation={selectedLocation}
+        onUseCurrentLocation={handleUseCurrentLocation}
+        onSelectLocation={handleSelectLocation}
+        usingCurrentLocation={usingCurrentLocation}
+      />
     </View>
   );
 }

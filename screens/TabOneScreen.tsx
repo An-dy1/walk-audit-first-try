@@ -5,6 +5,7 @@ import { Text, View } from '../components/Themed';
 import { RootTabScreenProps } from '../types';
 import * as ImagePicker from 'expo-image-picker';
 
+import { LocationNotes } from './LocationNotes';
 import { LocationSelection } from './LocationSelection';
 import * as Location from 'expo-location';
 
@@ -16,6 +17,7 @@ export default function TabOneScreen({}: RootTabScreenProps<'TabOne'>) {
   const [hasCameraPermission, setHasCameraPermission] = useState<
     boolean | null
   >(null);
+
   const [notes, setNotes] = useState<string>('');
 
   const [selectedLocation, setSelectedLocation] = useState<{
@@ -47,6 +49,10 @@ export default function TabOneScreen({}: RootTabScreenProps<'TabOne'>) {
     setUsingCurrentLocation(false);
   };
 
+  const onNotesChange = (text: string) => {
+    setNotes(text);
+  };
+
   async function userGaveCameraPermission() {
     if (hasCameraPermission == null) {
       const { status } = await ImagePicker.requestCameraPermissionsAsync();
@@ -67,7 +73,6 @@ export default function TabOneScreen({}: RootTabScreenProps<'TabOne'>) {
     if (hasMediaPermission == null) {
       const { status } =
         await ImagePicker.requestMediaLibraryPermissionsAsync();
-      console.log('media permissions:' + status);
       if (status !== 'granted') {
         setHasMediaPermission(false);
         return false;
@@ -101,9 +106,9 @@ export default function TabOneScreen({}: RootTabScreenProps<'TabOne'>) {
   //   console.log(GOOGLE_MAPS_API_KEY);
   // }
 
-  const handleTextInputChange = (text: string) => {
-    setNotes(text);
-  };
+  // const handleTextInputChange = (text: string) => {
+  //   setNotes(text);
+  // };
 
   const takePhoto = async () => {
     if ((await userGaveCameraPermission()) == true) {
@@ -150,12 +155,13 @@ export default function TabOneScreen({}: RootTabScreenProps<'TabOne'>) {
       {photoUri && <Image source={{ uri: photoUri }} style={styles.photo} />}
       <Button title='Take a photo' onPress={takePhoto} />
       <Button title='Choose from library' onPress={choosePhoto} />
-      <TextInput
+      {/* <TextInput
         style={styles.textInput}
         placeholder='Notes'
         onChangeText={handleTextInputChange}
         value={notes}
-      />
+      /> */}
+      <LocationNotes onNotesChange={onNotesChange} notes={notes} />
       <Button title='Save audit notes' onPress={handleSave} />
       {currentLocation && usingCurrentLocation ? (
         <Text>
@@ -207,5 +213,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     margin: 10,
     padding: 5,
+    color: 'white',
   },
 });

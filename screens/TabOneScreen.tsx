@@ -1,4 +1,11 @@
-import { StyleSheet, Image, Button, TextInput, Modal } from 'react-native';
+import {
+  StyleSheet,
+  Image,
+  Button,
+  TextInput,
+  Modal,
+  Platform,
+} from 'react-native';
 import React, { useState, useEffect } from 'react';
 import MapView, { Marker } from 'react-native-maps';
 import { Text, View } from '../components/Themed';
@@ -8,8 +15,10 @@ import * as ImagePicker from 'expo-image-picker';
 import { LocationNotes } from './LocationNotes';
 import { LocationSelection } from './LocationSelection';
 import * as Location from 'expo-location';
+import { TouchableOpacity } from 'react-native';
+import { MaterialIcons, AntDesign } from '@expo/vector-icons';
 
-export default function TabOneScreen({}: RootTabScreenProps<'TabOne'>) {
+export default function AuditNotes({}: RootTabScreenProps<'TabOne'>) {
   const [photoUri, setPhotoUri] = useState<string | null>(null);
   const [hasMediaPermission, setHasMediaPermission] = useState<boolean | null>(
     null
@@ -147,41 +156,48 @@ export default function TabOneScreen({}: RootTabScreenProps<'TabOne'>) {
   };
 
   const handleSave = () => {};
-
   return (
     <View style={styles.container}>
-      <Text>Camera permissions: {hasCameraPermission?.toString()}</Text>
-      <Text>Media permissions: {hasMediaPermission?.toString()}</Text>
-      {photoUri && <Image source={{ uri: photoUri }} style={styles.photo} />}
-      <Button title='Take a photo' onPress={takePhoto} />
-      <Button title='Choose from library' onPress={choosePhoto} />
-      {/* <TextInput
-        style={styles.textInput}
-        placeholder='Notes'
-        onChangeText={handleTextInputChange}
-        value={notes}
-      /> */}
-      <LocationNotes onNotesChange={onNotesChange} notes={notes} />
-      <Button title='Save audit notes' onPress={handleSave} />
+      <Text style={styles.title}>New Audit Notes</Text>
       {currentLocation && usingCurrentLocation ? (
-        <Text>
+        <Text style={styles.locationText}>
           Current: {`${currentLocation.latitude}, ${currentLocation.longitude}`}
         </Text>
       ) : selectedLocation && !usingCurrentLocation ? (
-        <Text>
+        <Text style={styles.locationText}>
           Selected:
           {`${selectedLocation.latitude}, ${selectedLocation.longitude}`}
         </Text>
       ) : (
-        <Text>No Location Available</Text>
+        <Text style={styles.locationText}>No Location Available</Text>
       )}
-      <LocationSelection
-        currentLocation={currentLocation}
-        selectedLocation={selectedLocation}
-        onUseCurrentLocation={handleUseCurrentLocation}
-        onSelectLocation={handleSelectLocation}
-        usingCurrentLocation={usingCurrentLocation}
-      />
+      <View style={styles.buttonRow}>
+        <TouchableOpacity style={styles.iconButton} onPress={takePhoto}>
+          <MaterialIcons name='camera-alt' size={40} color='black' />
+          <Text>Camera</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.iconButton} onPress={choosePhoto}>
+          <AntDesign name='picture' size={40} color='black' />
+          <Text>Gallery</Text>
+        </TouchableOpacity>
+      </View>
+      <View style={styles.buttonRow}>
+        <LocationSelection
+          currentLocation={currentLocation}
+          selectedLocation={selectedLocation}
+          onUseCurrentLocation={handleUseCurrentLocation}
+          onSelectLocation={handleSelectLocation}
+          usingCurrentLocation={usingCurrentLocation}
+        />
+        <TouchableOpacity style={styles.iconButton}>
+          <LocationNotes onNotesChange={onNotesChange} notes={notes} />
+          <MaterialIcons name='note-add' size={40} color='black' />
+          <Text>Add Notes</Text>
+        </TouchableOpacity>
+      </View>
+      <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
+        <Text style={styles.saveButtonText}>Save audit notes</Text>
+      </TouchableOpacity>
     </View>
   );
 }
@@ -189,30 +205,126 @@ export default function TabOneScreen({}: RootTabScreenProps<'TabOne'>) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#f8f8f8',
     alignItems: 'center',
-    justifyContent: 'center',
   },
   title: {
-    fontSize: 20,
+    fontSize: 24,
     fontWeight: 'bold',
+    marginVertical: 20,
+    color: 'black',
   },
-  separator: {
-    marginVertical: 30,
-    height: 1,
-    width: '80%',
-  },
-  photo: {
-    width: 300,
-    height: 300,
+  locationText: {
+    fontSize: 16,
+    color: 'darkgrey',
     marginBottom: 20,
   },
-  textInput: {
-    height: 40,
-    width: 300,
-    borderColor: 'gray',
-    borderWidth: 1,
-    margin: 10,
-    padding: 5,
+  buttonRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    width: '100%',
+    marginBottom: 20,
+  },
+  iconButton: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '33%',
+    height: Platform.OS === 'ios' ? 120 : 100,
+    borderRadius: 20,
+    backgroundColor: 'white',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  saveButton: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '80%',
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: '#007AFF',
+    marginBottom: 20,
+  },
+  saveButtonText: {
+    fontSize: 18,
     color: 'white',
   },
 });
+
+// Old version
+// const styles = StyleSheet.create({
+//   container: {
+//     flex: 1,
+//     alignItems: 'center',
+//     justifyContent: 'center',
+//   },
+//   title: {
+//     fontSize: 20,
+//     fontWeight: 'bold',
+//   },
+//   separator: {
+//     marginVertical: 30,
+//     height: 1,
+//     width: '80%',
+//   },
+//   photo: {
+//     width: 300,
+//     height: 300,
+//     marginBottom: 20,
+//   },
+//   textInput: {
+//     height: 40,
+//     width: 300,
+//     borderColor: 'gray',
+//     borderWidth: 1,
+//     margin: 10,
+//     padding: 5,
+//     color: 'white',
+//   },
+// });
+
+//
+// }
+
+// return (
+//   <View style={styles.container}>
+//     {currentLocation && usingCurrentLocation ? (
+//       <Text>
+//         Current: {`${currentLocation.latitude}, ${currentLocation.longitude}`}
+//       </Text>
+//     ) : selectedLocation && !usingCurrentLocation ? (
+//       <Text>
+//         Selected:
+//         {`${selectedLocation.latitude}, ${selectedLocation.longitude}`}
+//       </Text>
+//     ) : (
+//       <Text>No Location Available</Text>
+//     )}
+//     {/* <Text>Camera permissions: {hasCameraPermission?.toString()}</Text>
+//     <Text>Media permissions: {hasMediaPermission?.toString()}</Text> */}
+//     {photoUri && <Image source={{ uri: photoUri }} style={styles.photo} />}
+//     <Button title='Take a photo' onPress={takePhoto} />
+//     <Button title='Choose from library' onPress={choosePhoto} />
+//     {/* <TextInput
+//       style={styles.textInput}
+//       placeholder='Notes'
+//       onChangeText={handleTextInputChange}
+//       value={notes}
+//     /> */}
+//     <LocationNotes onNotesChange={onNotesChange} notes={notes} />
+
+//     <LocationSelection
+//       currentLocation={currentLocation}
+//       selectedLocation={selectedLocation}
+//       onUseCurrentLocation={handleUseCurrentLocation}
+//       onSelectLocation={handleSelectLocation}
+//       usingCurrentLocation={usingCurrentLocation}
+//     />
+//     <Button title='Save audit notes' onPress={handleSave} />
+//   </View>
+// );

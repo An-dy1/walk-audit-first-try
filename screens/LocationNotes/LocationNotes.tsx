@@ -1,7 +1,16 @@
-import { Text, View } from '../../components/Themed';
-import { Modal, TextInput, Button, Platform, Keyboard } from 'react-native';
-import { useState } from 'react';
-import { KeyboardAvoidingView } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import {
+  Text,
+  View,
+  StyleSheet,
+  Modal,
+  TextInput,
+  Button,
+  Platform,
+  Keyboard,
+  KeyboardAvoidingView,
+  TouchableWithoutFeedback,
+} from 'react-native';
 
 import { LocationNotesProps } from './LocationNotesProps';
 
@@ -10,51 +19,47 @@ export const LocationNotes: React.FC<LocationNotesProps> = ({
   onNotesChange,
 }) => {
   const [modalVisible, setModalVisible] = useState(false);
-  const [keyboardVisible, setKeyboardVisible] = useState(false);
-
-  const handleTextInputTap = () => {
-    console.log('handling tap');
-    if (keyboardVisible) {
-      console.log('Keyboard is visible, dismissing it...');
-      Keyboard.dismiss();
-      setKeyboardVisible(false);
-    } else {
-      console.log('Keyboard is not visible, showing it...');
-      setKeyboardVisible(true);
-    }
-  };
 
   const handleTextChange = (text: string) => {
-    setKeyboardVisible(true);
     onNotesChange(text);
   };
+
+  useEffect(() => {
+    const keyboardDidHideListener = Keyboard.addListener(
+      'keyboardDidHide',
+      () => {
+        Keyboard.dismiss();
+      }
+    );
+
+    return () => {
+      keyboardDidHideListener.remove();
+    };
+  }, []);
 
   return (
     <View>
       <Modal visible={modalVisible} animationType='slide'>
         <View style={{ flex: 1 }}>
-          <View style={{ flex: 1 }}>
-            <KeyboardAvoidingView
-              behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-              style={{ flex: 1 }}
-              //   keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
-            >
-              <TextInput
-                style={{
-                  flex: 1,
-                  color: 'white',
-                  fontSize: 20,
-                  marginTop: 100,
-                  padding: 50,
-                  borderWidth: 1,
-                }}
-                multiline
-                value={notes ? notes : ''}
-                onChangeText={onNotesChange}
-                onFocus={handleTextInputTap}
-              />
-            </KeyboardAvoidingView>
-          </View>
+          <KeyboardAvoidingView
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            style={{ flex: 1 }}
+          >
+            <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+              <View style={styles.inputContainer}>
+                <TextInput
+                  style={styles.textInput}
+                  multiline
+                  value={notes ? notes : ''}
+                  onChangeText={handleTextChange}
+                  placeholder='type here...'
+                  placeholderTextColor='darkblue'
+                  returnKeyType='done'
+                  onSubmitEditing={Keyboard.dismiss}
+                />
+              </View>
+            </TouchableWithoutFeedback>
+          </KeyboardAvoidingView>
           <View>
             <Button title='Close' onPress={() => setModalVisible(false)} />
           </View>
@@ -66,3 +71,22 @@ export const LocationNotes: React.FC<LocationNotesProps> = ({
     </View>
   );
 };
+
+const styles = StyleSheet.create({
+  inputContainer: {
+    flex: 1,
+    justifyContent: 'center',
+  },
+  textInput: {
+    backgroundColor: 'white',
+    color: 'darkblue',
+    fontSize: 20,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderWidth: 1,
+    borderColor: 'darkblue',
+    borderRadius: 5,
+    alignSelf: 'center',
+    width: '80%',
+  },
+});
